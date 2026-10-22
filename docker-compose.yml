@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-loans}
+      POSTGRES_USER: ${POSTGRES_USER:-loans}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-loans}
+    ports: ["5433:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-loans} -d ${POSTGRES_DB:-loans}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  web:
+    build: .
+    env_file: .env
+    command: sh -c "python manage.py makemigrations loans documents processing underwriting --noinput && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    volumes: [".:/app"]
+    ports: ["8000:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+  worker:
+    build: .
+    env_file: .env
+    command: celery -A config worker -l info --concurrency=4
+    volumes: [".:/app"]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+volumes:
+  postgres_data:

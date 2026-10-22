@@ -1,0 +1,1090 @@
+openapi: 3.0.3
+info:
+  title: Loan Processing Platform API
+  version: 1.0.0
+paths:
+  /api/documents/:
+    get:
+      operationId: documents_list
+      parameters:
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - bank_statement
+          - id
+          - other
+          - paystub
+          - w2
+        description: |-
+          * `paystub` - Pay Stub
+          * `bank_statement` - Bank Statement
+          * `w2` - W-2
+          * `id` - Identification
+          * `other` - Other
+      - in: query
+        name: loan
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: processed
+        schema:
+          type: boolean
+      tags:
+      - documents
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLoanDocumentList'
+          description: ''
+    post:
+      operationId: documents_create
+      tags:
+      - documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanDocument'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanDocument'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanDocument'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanDocument'
+          description: ''
+  /api/documents/{id}/:
+    get:
+      operationId: documents_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan document.
+        required: true
+      tags:
+      - documents
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanDocument'
+          description: ''
+    put:
+      operationId: documents_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan document.
+        required: true
+      tags:
+      - documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanDocument'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanDocument'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanDocument'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanDocument'
+          description: ''
+    patch:
+      operationId: documents_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan document.
+        required: true
+      tags:
+      - documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanDocument'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanDocument'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanDocument'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanDocument'
+          description: ''
+    delete:
+      operationId: documents_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan document.
+        required: true
+      tags:
+      - documents
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/loans/:
+    get:
+      operationId: loans_list
+      parameters:
+      - in: query
+        name: applicant_email
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - approved
+          - draft
+          - processing
+          - rejected
+          - review
+          - submitted
+        description: |-
+          * `draft` - Draft
+          * `submitted` - Submitted
+          * `processing` - Processing
+          * `review` - Manual Review
+          * `approved` - Approved
+          * `rejected` - Rejected
+      tags:
+      - loans
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLoanApplicationList'
+          description: ''
+    post:
+      operationId: loans_create
+      tags:
+      - loans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplication'
+          description: ''
+  /api/loans/{id}/:
+    get:
+      operationId: loans_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan application.
+        required: true
+      tags:
+      - loans
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplication'
+          description: ''
+    put:
+      operationId: loans_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan application.
+        required: true
+      tags:
+      - loans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplication'
+          description: ''
+    patch:
+      operationId: loans_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan application.
+        required: true
+      tags:
+      - loans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanApplication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanApplication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanApplication'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplication'
+          description: ''
+    delete:
+      operationId: loans_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan application.
+        required: true
+      tags:
+      - loans
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/loans/{id}/submit/:
+    post:
+      operationId: loans_submit_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan application.
+        required: true
+      tags:
+      - loans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanApplication'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplication'
+          description: ''
+  /api/processing-jobs/:
+    get:
+      operationId: processing_jobs_list
+      parameters:
+      - in: query
+        name: loan
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - failed
+          - queued
+          - running
+          - succeeded
+        description: |-
+          * `queued` - Queued
+          * `running` - Running
+          * `succeeded` - Succeeded
+          * `failed` - Failed
+      tags:
+      - processing-jobs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProcessingJobList'
+          description: ''
+  /api/processing-jobs/{id}/:
+    get:
+      operationId: processing_jobs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this processing job.
+        required: true
+      tags:
+      - processing-jobs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingJob'
+          description: ''
+  /api/recommendations/:
+    get:
+      operationId: recommendations_list
+      parameters:
+      - in: query
+        name: decision
+        schema:
+          type: string
+          enum:
+          - approve
+          - manual_review
+          - reject
+        description: |-
+          * `approve` - Approve
+          * `manual_review` - Manual Review
+          * `reject` - Reject
+      - in: query
+        name: loan
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - recommendations
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecommendationList'
+          description: ''
+  /api/recommendations/{id}/:
+    get:
+      operationId: recommendations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this recommendation.
+        required: true
+      tags:
+      - recommendations
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+components:
+  schemas:
+    DecisionEnum:
+      enum:
+      - approve
+      - manual_review
+      - reject
+      type: string
+      description: |-
+        * `approve` - Approve
+        * `manual_review` - Manual Review
+        * `reject` - Reject
+    KindEnum:
+      enum:
+      - paystub
+      - bank_statement
+      - w2
+      - id
+      - other
+      type: string
+      description: |-
+        * `paystub` - Pay Stub
+        * `bank_statement` - Bank Statement
+        * `w2` - W-2
+        * `id` - Identification
+        * `other` - Other
+    LoanApplication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        applicant_name:
+          type: string
+          maxLength: 200
+        applicant_email:
+          type: string
+          format: email
+          maxLength: 254
+        requested_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        purpose:
+          type: string
+          maxLength: 255
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LoanApplicationStatusEnum'
+          readOnly: true
+        document_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - applicant_email
+      - applicant_name
+      - created_at
+      - document_count
+      - id
+      - purpose
+      - requested_amount
+      - status
+      - updated_at
+    LoanApplicationStatusEnum:
+      enum:
+      - draft
+      - submitted
+      - processing
+      - review
+      - approved
+      - rejected
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `submitted` - Submitted
+        * `processing` - Processing
+        * `review` - Manual Review
+        * `approved` - Approved
+        * `rejected` - Rejected
+    LoanDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        loan:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        filename:
+          type: string
+          maxLength: 255
+        text_content:
+          type: string
+        extracted_data:
+          readOnly: true
+        processed:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        processed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - created_at
+      - extracted_data
+      - filename
+      - id
+      - kind
+      - loan
+      - processed
+      - processed_at
+    PaginatedLoanApplicationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoanApplication'
+    PaginatedLoanDocumentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoanDocument'
+    PaginatedProcessingJobList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessingJob'
+    PaginatedRecommendationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+    PatchedLoanApplication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        applicant_name:
+          type: string
+          maxLength: 200
+        applicant_email:
+          type: string
+          format: email
+          maxLength: 254
+        requested_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        purpose:
+          type: string
+          maxLength: 255
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LoanApplicationStatusEnum'
+          readOnly: true
+        document_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedLoanDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        loan:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        filename:
+          type: string
+          maxLength: 255
+        text_content:
+          type: string
+        extracted_data:
+          readOnly: true
+        processed:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        processed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+    ProcessingJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProcessingJobStatusEnum'
+          readOnly: true
+        celery_task_id:
+          type: string
+          readOnly: true
+        attempts:
+          type: integer
+          readOnly: true
+        error:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        loan:
+          type: string
+          format: uuid
+      required:
+      - attempts
+      - celery_task_id
+      - completed_at
+      - created_at
+      - error
+      - id
+      - loan
+      - started_at
+      - status
+    ProcessingJobStatusEnum:
+      enum:
+      - queued
+      - running
+      - succeeded
+      - failed
+      type: string
+      description: |-
+        * `queued` - Queued
+        * `running` - Running
+        * `succeeded` - Succeeded
+        * `failed` - Failed
+    Recommendation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        decision:
+          $ref: '#/components/schemas/DecisionEnum'
+        risk_score:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        debt_to_income:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,3})?$
+          nullable: true
+        monthly_income:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        monthly_liabilities:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        risk_flags: {}
+        reasons: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        loan:
+          type: string
+          format: uuid
+      required:
+      - created_at
+      - decision
+      - id
+      - loan
+      - monthly_income
+      - monthly_liabilities
+      - risk_score
+      - updated_at
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
