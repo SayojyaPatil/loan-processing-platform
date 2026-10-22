@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 postgres_data/
-benchmark-results/
+benchmark-results/*
+!benchmark-results/.gitkeep
 .DS_Store
 schema.yml
