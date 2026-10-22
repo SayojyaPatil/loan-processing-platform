@@ -6,3 +6,4 @@ __pycache__/
 postgres_data/
 benchmark-results/
 .DS_Store
+schema.yml
