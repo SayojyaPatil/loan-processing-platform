@@ -302,5 +302,3 @@ Existing anonymous API clients, seed scripts, and load-test tooling may need cha
 - Simultaneous-worker races and high-concurrency failure behavior need further testing.
 - Local defaults are not production-ready: disable Django debug mode, set strong secrets, configure allowed hosts, HTTPS, storage, monitoring, and deployment controls.
 - Historical AI and API benchmarks predate the current access controls; they should not be represented as post-upgrade throughput measurements.
-
-Never commit `.env`, production credentials, or actual applicant information. `.dockerignore` excludes local secrets and development artifacts from the image build context.
