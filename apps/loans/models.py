@@ -11,6 +11,7 @@ class LoanApplication(models.Model):
         REJECTED='rejected','Rejected'
 
     id=models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner=models.ForeignKey('auth.User', on_delete=models.PROTECT, related_name='loan_applications', null=True, blank=True)
     applicant_name=models.CharField(max_length=200)
     applicant_email=models.EmailField(db_index=True)
     requested_amount=models.DecimalField(max_digits=12, decimal_places=2)
