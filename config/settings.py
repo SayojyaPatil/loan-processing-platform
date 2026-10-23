@@ -6,9 +6,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret')
 DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
-ALLOWED_HOSTS = ['*']
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret')
+if not DEBUG and SECRET_KEY in ('dev-secret', 'dev-secret-change-me', ''):
+    raise RuntimeError('Set a secure DJANGO_SECRET_KEY when DJANGO_DEBUG=false')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_HSTS_SECONDS', '0')) if not DEBUG else 0
+SECURE_SSL_REDIRECT = os.getenv('DJANGO_SSL_REDIRECT', 'false').lower() == 'true' if not DEBUG else False
 
 INSTALLED_APPS = [
     'django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions',
@@ -52,6 +60,16 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS':['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE':50,
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {'anon': '30/min', 'user': '120/min'},
 }
 SPECTACULAR_SETTINGS={'TITLE':'Loan Processing Platform API','VERSION':'1.0.0'}
 
@@ -64,3 +82,5 @@ CELERY_TASK_SOFT_TIME_LIMIT = 100
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY','')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL','gpt-5.6-luna')
 USE_FAKE_AI = os.getenv('USE_FAKE_AI','true').lower() == 'true'
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024

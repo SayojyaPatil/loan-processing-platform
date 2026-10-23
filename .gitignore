@@ -8,3 +8,4 @@ benchmark-results/*
 !benchmark-results/.gitkeep
 .DS_Store
 schema.yml
+backups/
