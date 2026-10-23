@@ -1,489 +1,225 @@
-# AI-Powered Loan Processing Platform
+# Loan Processing Platform
 
-An asynchronous backend platform for loan-document processing, structured data extraction, underwriting recommendations, and approval workflows.
 
-## Tech Stack
+Backend application for loan submission, document data extraction, asynchronous processing, and rule-based underwriting recommendations. Built with Django REST Framework, PostgreSQL, Redis, Celery, Pydantic, and an optional OpenAI extraction step.
 
-- Django
-- Django REST Framework
-- PostgreSQL
-- Redis
-- Celery
-- Pydantic
-- Docker
-- OpenAI API
-- Locust
-
-## Architecture
-
-```text
-Client
-  ↓
-Django REST Framework
-  ↓
-PostgreSQL
-  ↓
-Loan Submission
-  ↓
-Redis Queue
-  ↓
-Celery Worker
-  ↓
-OpenAI Document Extraction
-  ↓
-Pydantic Validation
-  ↓
-Underwriting Engine
-  ↓
-Approve / Manual Review / Reject
-```
-
-The platform separates synchronous API operations from longer-running AI and document-processing workloads.
-
-## Core Workflow
-
-1. Create a loan application through the REST API.
-2. Attach loan documents.
-3. Submit the application for processing.
-4. Redis queues the processing task.
-5. Celery performs document analysis asynchronously.
-6. OpenAI extracts structured financial and risk information.
-7. Pydantic validates the extracted output.
-8. The underwriting engine calculates debt-to-income ratio and risk indicators.
-9. The platform generates an approval, rejection, or manual-review recommendation.
-10. Processing state and underwriting results are persisted in PostgreSQL.
+This repository contains the API, background worker, database migrations, tests, and benchmark scripts. The underwriting output is a software-generated recommendation, **not a production lending decision**.
 
 ## Features
 
-- Loan and document CRUD APIs
-- Asynchronous document processing with Celery and Redis
-- OpenAI-powered structured document extraction
-- Pydantic validation of model outputs
-- Automated underwriting recommendations
-- Debt-to-income calculations
-- Risk scoring and manual-review flags
-- PostgreSQL persistence and targeted indexing
-- Processing-job tracking
-- Swagger / OpenAPI documentation
-- Dockerized multi-service development environment
-- Synthetic data generation
-- API load testing with Locust
-- PostgreSQL indexed vs. unindexed performance benchmarking
+- REST endpoints for loan applications and associated documents
+- Submission workflow that queues a Celery processing job in Redis
+- Document extraction in deterministic mock mode or optional OpenAI mode
+- Pydantic validation for structured extraction results
+- Underwriting recommendations based on extracted income, liabilities, and risk indicators
+- Processing-job status tracking and saved recommendations in PostgreSQL
+- OpenAPI/Swagger documentation and load/benchmark scripts
 
-## AI Extraction
+## Architecture
 
-The project supports two processing modes.
-
-### Mock Mode
-
-```env
-USE_FAKE_AI=true
+```mermaid
+flowchart LR
+    A[API client] --> B[Django REST Framework]
+    B --> C[(PostgreSQL)]
+    B --> D[Redis broker]
+    D --> E[Celery worker]
+    E --> F[Document extraction]
+    F --> G[Pydantic validation]
+    G --> H[Underwriting rules]
+    H --> C
+    C --> B
 ```
 
-Mock mode uses deterministic structured data for local development without requiring OpenAI API calls.
+**Processing path:** create a loan, attach document text, submit it, retrieve the processing job status, and inspect the underwriting recommendation. The API returns a submission response while the worker processes the document independently.
 
-### OpenAI Mode
+## Tech stack
 
-```env
-USE_FAKE_AI=false
-OPENAI_API_KEY=your_api_key
-```
+| Layer | Technologies |
+|---|---|
+| API | Python, Django 5, Django REST Framework, drf-spectacular |
+| Database | PostgreSQL, Django ORM |
+| Background jobs | Celery, Redis |
+| Data extraction | Pydantic, optional OpenAI API |
+| Development | Docker Compose, Gunicorn |
+| Tests and benchmarks | pytest, pytest-django, Locust, custom Python scripts |
 
-OpenAI responses are validated with Pydantic before being used by the underwriting workflow.
+## Getting started
 
-Extracted fields include:
+### Prerequisites
 
-- Monthly income
-- Employment information
-- Monthly liabilities
-- Confidence scores
-- Risk indicators
-- Loan recommendation inputs
+Python 3.12, Docker with Compose, and a free local port **5433** for PostgreSQL and **6379** for Redis. The API uses port **8000** by default. If another project is using these ports, adjust the mappings before starting; don't stop unrelated containers.
 
-## Performance Results
-
-### OpenAI Extraction Evaluation
-
-The OpenAI extraction pipeline was evaluated across **100 synthetic loan documents**.
-
-Measured results:
-
-```text
-Documents evaluated:       100
-Schema-valid responses:    100 / 100
-Schema-valid rate:         100%
-
-Average processing time:   1.72 seconds
-Median processing time:    1.54 seconds
-P95 processing time:       2.69 seconds
-Maximum processing time:   8.65 seconds
-```
-
-The evaluation produced **0 schema-validation failures**.
-
-The benchmark can be reproduced with:
-
-```bash
-USE_FAKE_AI=false AI_EVAL_COUNT=100 python benchmarks/ai_evaluation.py
-```
-
-Results are written to:
-
-```text
-benchmark-results/ai/
-```
-
-## API Load Testing
-
-Core REST endpoints were tested with Locust under:
-
-```text
-Concurrent users: 50
-Spawn rate:       10 users / second
-Duration:         60 seconds
-```
-
-Measured results:
-
-```text
-Total requests:          17,392
-Request failures:        0
-Aggregate throughput:    ~297 requests / second
-Worst endpoint P95:      24 ms
-```
-
-Endpoint-level P95 latency:
-
-```text
-GET  /api/loans/               24 ms
-GET  /api/processing-jobs/     19 ms
-POST /api/loans/               15 ms
-```
-
-Run the benchmark with:
-
-```bash
-./benchmarks/api_benchmark.sh
-```
-
-Results are written to:
-
-```text
-benchmark-results/api/
-```
-
-## PostgreSQL Performance
-
-Representative loan and document queries were benchmarked against equivalent unindexed baselines using PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)`.
-
-Measured results:
-
-```text
-Loan status lookup:
-Indexed median:     0.027 ms
-Unindexed median:   2.763 ms
-Improvement:        99.02%
-
-Applicant lookup:
-Indexed median:     0.012 ms
-Unindexed median:   0.4935 ms
-Improvement:        97.57%
-
-Document lookup:
-Indexed median:     0.015 ms
-Unindexed median:   0.339 ms
-Improvement:        95.58%
-```
-
-Summary:
-
-```text
-Average improvement:  97.39%
-Best improvement:     99.02%
-Worst improvement:    95.58%
-```
-
-The benchmark uses temporary indexed and unindexed copies of the same dataset so the application's production indexes are not modified.
-
-Run:
-
-```bash
-python benchmarks/database_benchmark.py
-```
-
-Results are written to:
-
-```text
-benchmark-results/database/
-```
-
-## Running Locally
-
-### 1. Create a virtual environment
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-```
-
-### 2. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Create the environment configuration
+### 1. Configure the environment
 
 ```bash
 cp .env.example .env
 ```
 
-Example local configuration:
+The supplied `.env.example` uses Docker-network hostnames (`db` and `redis`). To run Django and Celery **on the host** while keeping database and Redis in Docker, change these in your local `.env`:
 
-```env
-DJANGO_SECRET_KEY=dev-secret-change-me
-DJANGO_DEBUG=true
-
-POSTGRES_DB=loans
-POSTGRES_USER=loans
-POSTGRES_PASSWORD=loans
-POSTGRES_HOST=localhost
+```dotenv
+POSTGRES_HOST=127.0.0.1
 POSTGRES_PORT=5433
-
-REDIS_URL=redis://localhost:6379/0
-
-OPENAI_API_KEY=
+REDIS_URL=redis://127.0.0.1:6379/0
 USE_FAKE_AI=true
 ```
 
-### 4. Start PostgreSQL and Redis
+Leave `OPENAI_API_KEY` unset for deterministic mock extraction. Do not commit `.env` or use the sample passwords outside local development.
+
+### 2. Start dependencies
 
 ```bash
 docker compose up -d db redis
 ```
 
-### 5. Apply migrations
+### 3. Install and migrate
 
 ```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 python manage.py migrate
 ```
 
-### 6. Run Django
+### 4. Start the API and worker
+
+In one terminal:
 
 ```bash
-python manage.py runserver
+python manage.py runserver 127.0.0.1:8000
 ```
 
-or:
-
-```bash
-python -m gunicorn config.wsgi:application \
-  --bind 127.0.0.1:8000 \
-  --workers 4 \
-  --threads 4
-```
-
-### 7. Start Celery
+In a second terminal, with `.venv` activated:
 
 ```bash
 celery -A config worker -l info --pool=solo
 ```
 
-## API Documentation
+Alternatively, use `docker compose up --build` to run the API and worker inside containers with the default Docker-hostname configuration in `.env`. Check existing ports first.
 
-Swagger documentation is available at:
+### API documentation
 
-```text
-http://127.0.0.1:8000/api/docs/
-```
+- Swagger UI: `http://127.0.0.1:8000/api/docs/`
+- OpenAPI schema: `http://127.0.0.1:8000/api/schema/`
 
-OpenAPI schema:
+## Example API flow
 
-```text
-http://127.0.0.1:8000/api/schema/
-```
-
-## Example Workflow
-
-### Create a Loan
+**1. Create a loan**
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/loans/ \
   -H 'Content-Type: application/json' \
-  -d '{
-    "applicant_name": "Alex Morgan",
-    "applicant_email": "alex@example.com",
-    "requested_amount": "50000.00",
-    "purpose": "debt_consolidation"
-  }'
+  -d '{"applicant_name":"Alex Morgan","applicant_email":"alex@example.com","requested_amount":"50000.00","purpose":"debt_consolidation"}'
 ```
 
-### Add a Document
+**2. Attach document text** (replace `LOAN_UUID` with the created loan ID):
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/documents/ \
   -H 'Content-Type: application/json' \
-  -d '{
-    "loan": "LOAN_UUID",
-    "kind": "paystub",
-    "filename": "paystub.txt",
-    "text_content": "Monthly income: $8000. Monthly liabilities: $1200. Employment status: employed."
-  }'
+  -d '{"loan":"LOAN_UUID","kind":"paystub","filename":"paystub.txt","text_content":"Monthly income: $8000. Monthly liabilities: $1200. Employment status: employed."}'
 ```
 
-### Submit the Loan
+**3. Submit**
 
 ```bash
-curl -X POST \
-  http://127.0.0.1:8000/api/loans/LOAN_UUID/submit/
+curl -X POST http://127.0.0.1:8000/api/loans/LOAN_UUID/submit/
 ```
 
-### Check Processing Status
+**4. Query results**
 
 ```text
-GET /api/processing-jobs/
-GET /api/processing-jobs/{id}/
-```
-
-### Retrieve Underwriting Recommendation
-
-```text
+GET /api/processing-jobs/?loan=LOAN_UUID
 GET /api/recommendations/?loan=LOAN_UUID
 ```
 
-## Generate Synthetic Data
+The submit action requires at least one document and returns HTTP 202 with a processing-job ID.
 
-Synthetic loan applications can be generated for development and benchmark preparation.
+## API reference
 
-```bash
-python manage.py seed_loans --count 1000
-```
+| Resource | Routes |
+|---|---|
+| Loans | `GET/POST /api/loans/`, `GET/PUT/PATCH/DELETE /api/loans/{id}/`, `POST /api/loans/{id}/submit/` |
+| Documents | `GET/POST /api/documents/`, `GET/PUT/PATCH/DELETE /api/documents/{id}/` |
+| Processing | `GET /api/processing-jobs/`, `GET /api/processing-jobs/{id}/` |
+| Recommendations | `GET /api/recommendations/`, `GET /api/recommendations/{id}/` |
 
-The record count is configurable:
+## Extraction modes
 
-```bash
-python manage.py seed_loans --count 5000
-```
+`USE_FAKE_AI=true` enables a deterministic parser intended for tests and local development. With `USE_FAKE_AI=false` and a valid `OPENAI_API_KEY`, the application requests structured data from the configured model and validates it against a Pydantic schema. The code falls back to mock extraction when no API key is configured. The mock path should not be interpreted as a measured OpenAI extraction.
 
-Generated applications are synthetic test data and are not intended to represent production usage.
+## Measured benchmarks
 
-## API Endpoints
+Results below are from the saved benchmark output in this repository, not service-level guarantees. Hardware, dataset size, and workload can change the results.
 
-### Loans
+### Structured extraction evaluation
 
-```text
-GET    /api/loans/
-POST   /api/loans/
-GET    /api/loans/{id}/
-PUT    /api/loans/{id}/
-PATCH  /api/loans/{id}/
-DELETE /api/loans/{id}/
-POST   /api/loans/{id}/submit/
-```
+| Metric | Observed result |
+|---|---:|
+| Synthetic documents evaluated | 100 |
+| Schema-valid responses | 100/100 (100%) |
+| Mean extraction time | 1.72 seconds |
+| P95 extraction time | 2.69 seconds |
+| Maximum extraction time | 8.65 seconds |
 
-### Documents
+Source: `benchmark-results/ai/ai-evaluation.json`. Reproduce with `USE_FAKE_AI=false AI_EVAL_COUNT=100 python benchmarks/ai_evaluation.py` after configuring an API key. A valid schema does not establish factual extraction accuracy.
 
-```text
-GET    /api/documents/
-POST   /api/documents/
-GET    /api/documents/{id}/
-PUT    /api/documents/{id}/
-PATCH  /api/documents/{id}/
-DELETE /api/documents/{id}/
-```
+### API load test
 
-### Processing Jobs
+| Metric | Observed result |
+|---|---:|
+| Requests | **17,256** |
+| Failures | 0 |
+| Aggregate throughput | 297.23 requests/second |
+| Aggregate P95 latency | 21 ms |
+| Worst endpoint P95 in saved summary | 24 ms |
 
-```text
-GET /api/processing-jobs/
-GET /api/processing-jobs/{id}/
-```
+Measured with Locust. Source: `benchmark-results/api/loan-api_stats.csv`. The output file reports 17,256 requests; this corrects an older README count of 17,392. Run `./benchmarks/api_benchmark.sh` to collect a new sample.
 
-### Recommendations
+### Indexed versus unindexed PostgreSQL lookups
 
-```text
-GET /api/recommendations/
-GET /api/recommendations/{id}/
-```
+| Lookup | Indexed median | Unindexed median | Time reduction |
+|---|---:|---:|---:|
+| Loan status | 0.027 ms | 2.763 ms | 99.02% |
+| Applicant email | 0.012 ms | 0.4935 ms | 97.57% |
+| Document | 0.015 ms | 0.339 ms | 95.58% |
 
-## Reliability Features
-
-- Redis-backed task queue
-- Asynchronous Celery workers
-- Processing-job state tracking
-- Celery retries
-- Retry backoff and jitter
-- Late task acknowledgements
-- Task timeouts
-- Pydantic output validation
-- Database transactions
-- Idempotent recommendation updates
-- Indexed PostgreSQL lookup fields
-- Separation of synchronous API and background worker processes
+Average measured lookup-time reduction: **97.39%** across three queries. Source: `benchmark-results/database/database-benchmark.json`. These are isolated query timings, not end-to-end API speedups. Rerun `python benchmarks/database_benchmark.py` for a new sample.
 
 ## Testing
-
-Run:
 
 ```bash
 python -m pytest -q
 ```
 
-The project includes tests for structured-output validation and underwriting behavior.
+Tests currently cover extracted-data schema validation and underwriting rules. GitHub Actions runs the suite with an isolated PostgreSQL service and mock extraction. Additional API and Celery integration tests remain future work.
 
-## Project Structure
+Generate synthetic loan records using:
 
-```text
-loan-processing-platform/
-├── apps/
-│   ├── documents/
-│   ├── loans/
-│   ├── processing/
-│   └── underwriting/
-├── benchmarks/
-│   ├── ai_evaluation.py
-│   ├── api_benchmark.sh
-│   ├── check_api_results.py
-│   └── database_benchmark.py
-├── benchmark-results/
-├── config/
-├── loadtests/
-│   └── locustfile.py
-├── tests/
-├── .env.example
-├── .gitignore
-├── docker-compose.yml
-├── Dockerfile
-├── manage.py
-├── pytest.ini
-├── README.md
-└── requirements.txt
+```bash
+python manage.py seed_loans --count 1000
 ```
 
-## Benchmark Summary
+## Repository layout
 
-| Metric | Result |
-|---|---:|
-| OpenAI schema-valid responses | **100% (100/100)** |
-| OpenAI average processing time | **1.72s** |
-| OpenAI P95 processing time | **2.69s** |
-| API load-test requests | **17,392** |
-| API failures | **0** |
-| Worst endpoint API P95 | **24ms** |
-| Aggregate API throughput | **~297 req/s** |
-| PostgreSQL average lookup improvement | **97.39%** |
-| PostgreSQL worst tested improvement | **95.58%** |
+```text
+apps/                 # loans, documents, processing, underwriting
+config/               # Django and Celery settings, URLs
+benchmarks/           # performance and extraction evaluation scripts
+benchmark-results/    # saved measurement outputs
+loadtests/            # Locust scenario
+tests/                # pytest suite
+docker-compose.yml
+Dockerfile
+requirements.txt
+manage.py
+```
 
-## Potential Enhancements
+## Current limitations
 
-- PDF upload and parsing
-- OCR integration
-- S3-compatible object storage
-- Role-based authentication
-- File validation and malware scanning
-- Celery dead-letter queues
-- Prometheus metrics
-- OpenTelemetry tracing
-- CI/CD pipelines
-- Cloud deployment
-- Operations dashboard
+- Document creation currently accepts document metadata and text content; file upload, PDF parsing, OCR, and object storage are not implemented.
+- The underwriting rules and extraction are for demonstration. They are not validated for regulated credit decisions.
+- Authentication and role-based permissions are not enforced in the current API; do not expose it publicly as-is.
+- Development defaults use broad Django allowed hosts and debug settings. Restrict those before any deployment.
+- API load and AI extraction benchmarks use their documented test setups; they are not production claims.
+
